@@ -1,0 +1,263 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>AIリスク仕分けボード</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+/* Layout: classroom sorting board — case cards on top, four category trays below (4 → 2 → 1 columns) */
+:root{
+  --bg:#EEF3F9; --surface:#FFFFFF; --ink:#1F3A5F; --body:#3D4A5C; --muted:#6A7687; --line:#D3DDE9;
+  --accent:#E07A2E; --accent-ink:#A9480F; --navy:#1F3A5F; --on-navy:#FBF8EF;
+  --c1:#2F6DB5; --c1-tint:#E4EEFA; --c2:#1E8068; --c2-tint:#E1F2EC; --c3:#B4561A; --c3-tint:#FBEBDD; --c4:#7149A8; --c4-tint:#EEE7F8;
+  --ok:#1E7B4C; --ok-tint:#E2F3E9; --part:#9A6A00; --part-tint:#FBF0D3; --ng:#B3362F; --ng-tint:#FBE5E3;
+  --display:'Zen Maru Gothic','Hiragino Maru Gothic ProN','Meiryo',sans-serif;
+  --text:'Noto Sans JP','Hiragino Sans','Meiryo',sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121A26; --surface:#1B2636; --ink:#E6EDF7; --body:#C3CEDC; --muted:#8C9AAD; --line:#2E3C51;
+  --accent:#F0924A; --accent-ink:#F5AE77; --navy:#2A4A75; --on-navy:#F4F1EA;
+  --c1:#7FB0EE; --c1-tint:#1C2D44; --c2:#6FCFB2; --c2-tint:#173430; --c3:#F0A06A; --c3-tint:#3A2618; --c4:#BFA2EA; --c4-tint:#2C2340;
+  --ok:#6FD39E; --ok-tint:#173526; --part:#F0C860; --part-tint:#3A2F12; --ng:#F08A82; --ng-tint:#3D1E1C;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121A26; --surface:#1B2636; --ink:#E6EDF7; --body:#C3CEDC; --muted:#8C9AAD; --line:#2E3C51;
+  --accent:#F0924A; --accent-ink:#F5AE77; --navy:#2A4A75; --on-navy:#F4F1EA;
+  --c1:#7FB0EE; --c1-tint:#1C2D44; --c2:#6FCFB2; --c2-tint:#173430; --c3:#F0A06A; --c3-tint:#3A2618; --c4:#BFA2EA; --c4-tint:#2C2340;
+  --ok:#6FD39E; --ok-tint:#173526; --part:#F0C860; --part-tint:#3A2F12; --ng:#F08A82; --ng-tint:#3D1E1C;
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--body);font-family:var(--text);font-size:16px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1320px;margin:0 auto;padding-block:24px 48px;display:flex;flex-direction:column;gap:24px}
+
+header{display:flex;flex-wrap:wrap;gap:16px 32px;align-items:end;justify-content:space-between}
+.eyebrow{font-size:13px;font-weight:700;letter-spacing:.12em;color:var(--accent-ink);margin:0 0 4px}
+h1{font-family:var(--display);font-weight:700;color:var(--ink);font-size:clamp(24px,3.2vw,36px);line-height:1.25;margin:0;text-wrap:balance}
+.lead{margin:6px 0 0;max-width:60ch}
+.tools{display:flex;flex-wrap:wrap;gap:8px}
+button.btn{font:700 15px/1 var(--text);padding:12px 18px;border-radius:999px;border:2px solid var(--navy);background:var(--surface);color:var(--ink);cursor:pointer}
+button.btn.primary{background:var(--navy);color:var(--on-navy)}
+button.btn:hover{filter:brightness(1.08)}
+button.btn:focus-visible,.card:focus-visible,.zone:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+
+.status{min-height:28px;font-weight:700;color:var(--ink);display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;font-size:14px;font-weight:700}
+.pill.ok{background:var(--ok-tint);color:var(--ok)} .pill.part{background:var(--part-tint);color:var(--part)} .pill.ng{background:var(--ng-tint);color:var(--ng)}
+.pill.info{background:var(--surface);color:var(--muted);border:1px solid var(--line)}
+
+.pool{background:var(--surface);border:2px dashed var(--line);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.pool.over{border-color:var(--accent)}
+.pool h2,.zone h2{margin:0}
+.pool h2{font:700 15px/1.4 var(--text);color:var(--muted)}
+.pool .list{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;min-height:64px}
+.pool .empty{color:var(--muted);font-size:15px;align-self:center}
+
+.zones{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+@media (max-width:1100px){.zones{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:640px){.zones{grid-template-columns:1fr}}
+.zone{--c:var(--c1);--t:var(--c1-tint);background:var(--t);border:2px solid transparent;border-radius:20px;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:260px;cursor:default;min-width:0}
+.zone[data-zone="2"]{--c:var(--c2);--t:var(--c2-tint)} .zone[data-zone="3"]{--c:var(--c3);--t:var(--c3-tint)} .zone[data-zone="4"]{--c:var(--c4);--t:var(--c4-tint)}
+.zone.over,.zone.target{border-color:var(--c)}
+.zone.target{cursor:pointer}
+.zhead{display:flex;gap:10px;align-items:flex-start}
+.badge{flex:none;width:34px;height:34px;border-radius:50%;background:var(--c);color:var(--surface);display:grid;place-items:center;font:700 17px/1 var(--display)}
+.zone h2{font:700 18px/1.35 var(--display);color:var(--ink);text-wrap:balance}
+.zone .q{font-size:13px;color:var(--c);font-weight:700;margin:2px 0 0}
+.zone .list{display:flex;flex-direction:column;gap:8px;flex:1}
+.zone .empty{flex:1;display:grid;place-items:center;border:2px dashed color-mix(in srgb,var(--c) 40%,transparent);border-radius:14px;color:var(--muted);font-size:14px;padding:16px;text-align:center}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:grid;grid-template-columns:auto 1fr;gap:4px 10px;
+  cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;box-shadow:0 1px 2px rgba(20,40,70,.08);position:relative}
+.card .num{font:700 20px/1.2 var(--display);color:var(--accent-ink)}
+.card .ttl{font-weight:700;color:var(--ink);font-size:15px;line-height:1.45}
+.card .desc{grid-column:2;font-size:13px;color:var(--muted);line-height:1.5}
+.card.selected{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,transparent)}
+.card.placeholder{opacity:.35}
+.card .result{grid-column:1/-1;margin-top:6px;border-radius:10px;padding:6px 10px;font-size:13px;line-height:1.5}
+.card[data-result="ok"]{border-color:var(--ok)} .card[data-result="ok"] .result{background:var(--ok-tint);color:var(--ok)}
+.card[data-result="part"]{border-color:var(--part)} .card[data-result="part"] .result{background:var(--part-tint);color:var(--part)}
+.card[data-result="ng"]{border-color:var(--ng)} .card[data-result="ng"] .result{background:var(--ng-tint);color:var(--ng)}
+.result b{display:block}
+.ghost{position:fixed;left:0;top:0;z-index:50;pointer-events:none;cursor:grabbing;box-shadow:0 12px 28px rgba(20,40,70,.28);transform-origin:center}
+.hint{font-size:13px;color:var(--muted);margin:0}
+@media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s, box-shadow .15s}.zone,.pool{transition:border-color .15s}}
+</style>
+
+<main class="wrap">
+  <header>
+    <div>
+      <p class="eyebrow">生成AI ｜ AIを使ったときのリスクを考えよう</p>
+      <h1>10の事例を、4つの観点に分けよう</h1>
+      <p class="lead">事例カードをドラッグして、いちばんあてはまる観点に入れましょう。タブレットではカードをタップしてから、入れたい観点をタップしても動かせます。</p>
+    </div>
+    <div class="tools">
+      <button class="btn primary" id="check" type="button">答え合わせ</button>
+      <button class="btn" id="answer" type="button">正解を見る</button>
+      <button class="btn" id="reset" type="button">やり直す</button>
+    </div>
+  </header>
+
+  <div class="status" id="status" aria-live="polite"></div>
+
+  <section class="pool" id="pool" data-zone="0" aria-label="まだ分けていない事例">
+    <h2 id="poolTitle">まだ分けていない事例</h2>
+    <div class="list"></div>
+  </section>
+
+  <section class="zones" id="zones"></section>
+  <p class="hint">キーボードでは、Tabでカードを選んでEnter、次に観点を選んでEnterで移動できます。</p>
+</main>
+
+<script>
+const CATS = [
+  {id:1, name:'情報が正しいとは限らない', q:'その情報、本当？'},
+  {id:2, name:'個人情報・プライバシー', q:'自分と人の情報を守れている？'},
+  {id:3, name:'著作権・自分の学び', q:'自分の力・自分の作品になっている？'},
+  {id:4, name:'最後は人が判断する', q:'決めるのは誰？'},
+];
+const CASES = [
+  {id:1, n:'①', t:'宿題をAIに解かせてそのまま提出', d:'数学の宿題をAIに解かせ、答えだけ写して提出する。', a:3, also:[1], why:'答えを写すだけでは自分の力がつかない。AIの答えが間違っていることもある。'},
+  {id:2, n:'②', t:'個人情報つきでAIに相談', d:'友達の名前や学校名を書いてトラブルをAIに相談する。', a:2, also:[], why:'入力した名前や学校名は記録されることがある。友達の情報を無断で入力している。'},
+  {id:3, n:'③', t:'SNSの噂をAIに聞いて広める', d:'噂の真偽をAIに聞き、答えをそのまま友達に広める。', a:1, also:[], why:'AIの答えも噂も正しいとは限らない。広めると人を傷つけることがある。'},
+  {id:4, n:'④', t:'読書感想文をAIに書かせる', d:'言葉を少し変えただけで自分の作品として提出する。', a:3, also:[], why:'自分が書いていない文章を自分の作品として出すのはルール違反。'},
+  {id:5, n:'⑤', t:'画像を出典なしで発表資料に使用', d:'AIが作った画像を出典なしでそのまま貼る。', a:3, also:[1], why:'資料には出典を書く。AIで作った画像も「AIで作成」と書く。'},
+  {id:6, n:'⑥', t:'AIの診断だけで安心', d:'病院に行く前にAIの診断だけで満足してしまう。', a:1, also:[4], why:'AIは体を診察できない。具合が悪いときはまず大人や病院へ。'},
+  {id:7, n:'⑦', t:'係決めをAIまかせにする', d:'話し合いをせずAIの提案通りに決めてしまう。', a:4, also:[], why:'AIはクラスの事情やみんなの気持ちを知らない。話し合って決める。'},
+  {id:8, n:'⑧', t:'写真を加工し本人確認なしで投稿', d:'AIで加工した画像を本人に確認せずSNSに投稿する。', a:2, also:[], why:'本人の許可なく写真を加工・投稿すると、肖像権の侵害やいじめになる。'},
+  {id:9, n:'⑨', t:'教科書と照合せず情報を使用', d:'AIが出した年号や人物名をそのままレポートに使う。', a:1, also:[3], why:'年号や人物名はAIが間違えやすい。教科書や資料集で確かめる。'},
+  {id:10, n:'⑩', t:'進路の悩みをAIだけに相談', d:'先生や家族に相談する前にAIだけで結論を出す。', a:4, also:[], why:'大切なことは、先生や家族など信頼できる人にも相談して決める。'},
+];
+
+const pool = document.getElementById('pool');
+const zonesEl = document.getElementById('zones');
+const statusEl = document.getElementById('status');
+const lists = {0: pool.querySelector('.list')};
+const cards = {};
+let selected = null;
+
+CATS.forEach(c => {
+  const z = document.createElement('section');
+  z.className = 'zone'; z.dataset.zone = c.id; z.tabIndex = 0; z.setAttribute('role','button');
+  z.setAttribute('aria-label', `観点${c.id} ${c.name}`);
+  z.innerHTML = `<div class="zhead"><span class="badge">${c.id}</span><div><h2>${c.name}</h2><p class="q">${c.q}</p></div></div><div class="list"></div>`;
+  zonesEl.append(z);
+  lists[c.id] = z.querySelector('.list');
+});
+
+CASES.forEach(c => {
+  const el = document.createElement('div');
+  el.className = 'card'; el.dataset.id = c.id; el.tabIndex = 0; el.setAttribute('role','button');
+  el.setAttribute('aria-label', `${c.n} ${c.t}`);
+  el.innerHTML = `<span class="num">${c.n}</span><span class="ttl">${c.t}</span><span class="desc">${c.d}</span><div class="result" hidden></div>`;
+  cards[c.id] = el;
+  attachDrag(el);
+});
+
+function zoneOf(el){ return Number(el.closest('[data-zone]').dataset.zone); }
+function insertSorted(list, el){
+  const id = Number(el.dataset.id);
+  const after = [...list.querySelectorAll('.card')].find(c => c !== el && Number(c.dataset.id) > id);
+  list.insertBefore(el, after || null);
+}
+function place(el, zone){
+  clearResult(el);
+  insertSorted(lists[zone], el);
+  select(null);
+  refresh();
+}
+function clearResult(el){ delete el.dataset.result; const r = el.querySelector('.result'); r.hidden = true; r.innerHTML = ''; }
+function refresh(){
+  Object.entries(lists).forEach(([z, list]) => {
+    let e = list.querySelector('.empty');
+    const has = list.querySelector('.card');
+    if (!has && !e){ e = document.createElement('div'); e.className = 'empty';
+      e.textContent = z === '0' ? 'すべての事例を分けました。「答え合わせ」を押してみよう。' : 'ここに事例をドラッグ'; list.append(e); }
+    if (has && e) e.remove();
+  });
+  const left = lists[0].querySelectorAll('.card').length;
+  document.getElementById('poolTitle').textContent = `まだ分けていない事例（${left}）`;
+}
+function select(el){
+  if (selected) selected.classList.remove('selected');
+  selected = (el && el !== selected) ? el : null;
+  if (selected) selected.classList.add('selected');
+  document.querySelectorAll('.zone, .pool').forEach(z => z.classList.toggle('target', !!selected));
+}
+
+// tap / click on a zone moves the selected card there
+document.querySelectorAll('[data-zone]').forEach(z => {
+  z.addEventListener('click', e => { if (selected && !e.target.closest('.card')) place(selected, Number(z.dataset.zone)); });
+  z.addEventListener('keydown', e => {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target === z && selected){ e.preventDefault(); const s = selected; place(s, Number(z.dataset.zone)); s.focus(); }
+  });
+});
+
+function attachDrag(el){
+  let st = null;
+  el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); select(el); } });
+  el.addEventListener('pointerdown', e => {
+    if (e.button > 0) return;
+    const r = el.getBoundingClientRect();
+    st = {x:e.clientX, y:e.clientY, ox:e.clientX - r.left, oy:e.clientY - r.top, w:r.width, moved:false, ghost:null, over:null};
+    el.setPointerCapture(e.pointerId);
+  });
+  el.addEventListener('pointermove', e => {
+    if (!st) return;
+    if (!st.moved){
+      if (Math.hypot(e.clientX - st.x, e.clientY - st.y) < 6) return;
+      st.moved = true; select(null);
+      const g = el.cloneNode(true); g.classList.add('ghost'); g.style.width = st.w + 'px';
+      document.body.append(g); st.ghost = g; el.classList.add('placeholder');
+    }
+    st.ghost.style.transform = `translate(${e.clientX - st.ox}px, ${e.clientY - st.oy}px) rotate(-1.5deg)`;
+    const hit = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-zone]') || null;
+    if (hit !== st.over){ st.over?.classList.remove('over'); hit?.classList.add('over'); st.over = hit; }
+  });
+  const end = (e, cancel) => {
+    if (!st) return;
+    const s = st; st = null;
+    if (s.moved){
+      s.ghost.remove(); el.classList.remove('placeholder'); s.over?.classList.remove('over');
+      if (!cancel && s.over) place(el, Number(s.over.dataset.zone));
+    } else if (!cancel){ select(el); }
+  };
+  el.addEventListener('pointerup', e => end(e, false));
+  el.addEventListener('pointercancel', e => end(e, true));
+  el.addEventListener('click', e => e.stopPropagation());
+}
+
+function showResult(el, kind, html){
+  el.dataset.result = kind;
+  const r = el.querySelector('.result'); r.innerHTML = html; r.hidden = false;
+}
+function catName(id){ return CATS.find(c => c.id === id).name; }
+function check(){
+  let ok = 0, part = 0, ng = 0;
+  CASES.forEach(c => {
+    const el = cards[c.id]; const z = zoneOf(el);
+    if (z === 0){ clearResult(el); return; }
+    if (z === c.a){ ok++; showResult(el, 'ok', `<b>◯ 正解</b>${c.why}`); }
+    else if (c.also.includes(z)){ part++; showResult(el, 'part', `<b>△ おしい：その観点もあてはまります</b>いちばん大きいのは「${catName(c.a)}」。${c.why}`); }
+    else { ng++; showResult(el, 'ng', `<b>✕ もう一度考えよう</b>ヒント：${CATS.find(x => x.id === c.a).q}`); }
+  });
+  const left = lists[0].querySelectorAll('.card').length;
+  statusEl.innerHTML = (ok === 10 ? '<span class="pill ok">全問正解！</span>' : '') +
+    `<span class="pill ok">◯ 正解 ${ok}</span><span class="pill part">△ おしい ${part}</span><span class="pill ng">✕ もう一度 ${ng}</span>` +
+    (left ? `<span class="pill info">まだ分けていない事例 ${left}</span>` : '');
+}
+document.getElementById('check').addEventListener('click', check);
+document.getElementById('answer').addEventListener('click', () => {
+  CASES.forEach(c => insertSorted(lists[c.a], cards[c.id])); select(null); refresh(); check();
+});
+document.getElementById('reset').addEventListener('click', () => {
+  CASES.forEach(c => { clearResult(cards[c.id]); insertSorted(lists[0], cards[c.id]); });
+  select(null); statusEl.innerHTML = ''; refresh();
+});
+
+CASES.forEach(c => lists[0].append(cards[c.id]));
+refresh();
+</script>
+
+</body></html>

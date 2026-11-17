@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学ぶ目的とAIの使い方 確認クイズ</title>
+<style>
+:root{
+  --ink:#1c2b23;
+  --paper:#f4efe4;
+  --paper-deep:#eae2d0;
+  --moss:#3f6b4f;
+  --moss-deep:#2c4d38;
+  --rust:#a8492f;
+  --line:#c9bfa4;
+  --ok:#2c6e4a;
+  --ng:#a8492f;
+  font-family: 'Georgia', serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ink:#ece6d6;
+    --paper:#1b2420;
+    --paper-deep:#232d27;
+    --moss:#7fae8e;
+    --moss-deep:#9cc4a9;
+    --rust:#e2896a;
+    --line:#3c463d;
+    --ok:#7fae8e;
+    --ng:#e2896a;
+  }
+}
+:root[data-theme="dark"]{
+  --ink:#ece6d6;
+  --paper:#1b2420;
+  --paper-deep:#232d27;
+  --moss:#7fae8e;
+  --moss-deep:#9cc4a9;
+  --rust:#e2896a;
+  --line:#3c463d;
+  --ok:#7fae8e;
+  --ng:#e2896a;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  padding:48px 20px 80px;
+  transition:background .3s ease,color .3s ease;
+}
+.sheet{width:100%;max-width:660px;}
+
+.masthead{
+  border-top:3px solid var(--ink);
+  border-bottom:1px solid var(--ink);
+  padding:18px 0 14px;
+  margin-bottom:34px;
+}
+.masthead .kicker{
+  font-family:'Courier New',monospace;
+  font-size:12px;
+  letter-spacing:0.06em;
+  color:var(--moss);
+  display:flex;
+  justify-content:space-between;
+}
+.masthead h1{
+  font-size:clamp(26px,5vw,34px);
+  line-height:1.25;
+  margin:10px 0 6px;
+  font-weight:700;
+}
+.masthead p{
+  margin:0;
+  font-size:14.5px;
+  opacity:0.72;
+  font-family:'Courier New',monospace;
+}
+
+.trail{display:flex;gap:6px;margin-bottom:30px;}
+.trail-seg{flex:1;height:4px;background:var(--line);position:relative;overflow:hidden;}
+.trail-seg::after{
+  content:'';position:absolute;inset:0;background:var(--moss);
+  transform:scaleX(0);transform-origin:left;transition:transform .35s ease;
+}
+.trail-seg.done::after{transform:scaleX(1);}
+.trail-seg.wrong::after{transform:scaleX(1);background:var(--rust);}
+
+.card{
+  background:var(--paper-deep);
+  border:1px solid var(--line);
+  padding:32px 30px;
+  position:relative;
+}
+.q-label{
+  font-family:'Courier New',monospace;
+  font-size:13px;
+  color:var(--moss);
+  margin-bottom:10px;
+  letter-spacing:.03em;
+}
+.q-scene{
+  font-size:15px;
+  line-height:1.7;
+  margin:0 0 12px;
+  padding:10px 14px;
+  border-left:3px solid var(--moss);
+  background:rgba(63,107,79,0.07);
+}
+.q-prompt{
+  font-size:19px;
+  line-height:1.55;
+  margin:0 0 26px;
+  font-weight:700;
+}
+
+.options{display:flex;flex-direction:column;gap:10px;}
+.opt{
+  text-align:left;
+  background:transparent;
+  border:1px solid var(--line);
+  color:var(--ink);
+  padding:14px 16px;
+  font-family:Georgia,serif;
+  font-size:15.5px;
+  line-height:1.5;
+  cursor:pointer;
+  display:flex;
+  gap:12px;
+  align-items:flex-start;
+  transition:border-color .15s ease, background .15s ease;
+}
+.opt .letter{
+  font-family:'Courier New',monospace;
+  font-weight:700;
+  color:var(--moss);
+  flex-shrink:0;
+  width:1.2em;
+}
+.opt:hover:not(:disabled){border-color:var(--moss);background:rgba(63,107,79,0.06);}
+.opt:disabled{cursor:default;}
+.opt.correct{border-color:var(--ok);background:rgba(44,110,74,0.12);}
+.opt.correct .letter{color:var(--ok);}
+.opt.incorrect{border-color:var(--ng);background:rgba(168,73,47,0.1);}
+.opt.incorrect .letter{color:var(--ng);}
+.opt.dim{opacity:0.45;}
+
+.feedback{
+  margin-top:22px;
+  padding-top:20px;
+  border-top:1px dashed var(--line);
+  display:none;
+}
+.feedback.show{display:block;}
+.verdict{
+  font-family:'Courier New',monospace;
+  font-size:13px;
+  letter-spacing:.05em;
+  font-weight:700;
+  margin-bottom:8px;
+}
+.verdict.ok{color:var(--ok);}
+.verdict.ng{color:var(--ng);}
+.feedback p{
+  margin:0 0 20px;
+  font-size:15px;
+  line-height:1.7;
+  opacity:0.9;
+  white-space:pre-line;
+}
+.next-btn{
+  background:var(--ink);
+  color:var(--paper);
+  border:none;
+  padding:12px 22px;
+  font-family:'Courier New',monospace;
+  font-size:14px;
+  letter-spacing:.04em;
+  cursor:pointer;
+}
+.next-btn:hover{background:var(--moss-deep);}
+
+.result{display:none;text-align:center;padding:20px 10px 4px;}
+.result.show{display:block;}
+.result .score{
+  font-family:Georgia,serif;
+  font-size:64px;
+  font-weight:700;
+  line-height:1;
+  margin:10px 0 4px;
+  color:var(--moss-deep);
+}
+.result .score span{font-size:26px;opacity:0.6;font-weight:400;}
+.result .msg{
+  font-size:16px;
+  line-height:1.7;
+  max-width:440px;
+  margin:18px auto 28px;
+  opacity:0.85;
+}
+.result .stamp{
+  display:inline-block;
+  border:2px solid var(--moss);
+  color:var(--moss);
+  font-family:'Courier New',monospace;
+  font-size:13px;
+  letter-spacing:.08em;
+  padding:6px 16px;
+  transform:rotate(-2deg);
+  margin-bottom:22px;
+}
+.result-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+.retry-btn{
+  background:transparent;
+  border:1px solid var(--ink);
+  color:var(--ink);
+  padding:12px 24px;
+  font-family:'Courier New',monospace;
+  font-size:14px;
+  cursor:pointer;
+}
+.retry-btn:hover{background:var(--ink);color:var(--paper);}
+.download-btn{
+  background:var(--moss-deep);
+  border:1px solid var(--moss-deep);
+  color:var(--paper);
+  padding:12px 24px;
+  font-family:'Courier New',monospace;
+  font-size:14px;
+  cursor:pointer;
+}
+.download-btn:hover{background:var(--moss);border-color:var(--moss);}
+.copy-btn{
+  background:var(--moss-deep);
+  border:1px solid var(--moss-deep);
+  color:var(--paper);
+  padding:12px 24px;
+  font-family:'Courier New',monospace;
+  font-size:14px;
+  cursor:pointer;
+}
+.copy-btn:hover{background:var(--moss);border-color:var(--moss);}
+.copy-note{
+  font-family:'Courier New',monospace;
+  font-size:12.5px;
+  color:var(--moss);
+  min-height:1.4em;
+  margin-top:10px;
+}
+
+.keypoint{
+  text-align:left;
+  border:1px solid var(--moss);
+  padding:18px 22px;
+  margin:0 0 28px;
+  font-size:15px;
+  line-height:1.75;
+}
+.keypoint .k-label{
+  font-family:'Courier New',monospace;
+  font-size:12px;
+  letter-spacing:.06em;
+  color:var(--moss);
+  margin-bottom:6px;
+}
+
+.review{text-align:left;margin:0 0 32px;display:flex;flex-direction:column;gap:16px;}
+.review-item{
+  background:var(--paper-deep);
+  border:1px solid var(--line);
+  border-left:3px solid var(--rust);
+  padding:20px 22px;
+}
+.review-item .r-label{
+  font-family:'Courier New',monospace;
+  font-size:12px;
+  color:var(--rust);
+  letter-spacing:.04em;
+  margin-bottom:8px;
+}
+.review-item .r-prompt{font-size:15.5px;font-weight:700;line-height:1.55;margin:0 0 12px;}
+.review-item .r-answer{font-size:14px;margin:0 0 10px;line-height:1.6;}
+.review-item .r-answer .tag{
+  font-family:'Courier New',monospace;
+  font-size:11.5px;
+  padding:1px 6px;
+  margin-right:6px;
+}
+.review-item .r-answer .tag.your{border:1px solid var(--ng);color:var(--ng);}
+.review-item .r-answer .tag.correct{border:1px solid var(--ok);color:var(--ok);}
+.review-item .r-explain{font-size:14px;line-height:1.75;opacity:0.88;margin:0;white-space:pre-line;}
+.review-heading{
+  font-family:'Courier New',monospace;
+  font-size:12px;
+  letter-spacing:.06em;
+  opacity:0.6;
+  margin:4px 0 2px;
+  text-align:left;
+}
+
+.quiz-wrap{display:block;}
+.quiz-wrap.hidden{display:none;}
+
+footer{
+  text-align:center;
+  margin-top:36px;
+  font-family:'Courier New',monospace;
+  font-size:11.5px;
+  opacity:0.5;
+}
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <div class="masthead">
+    <div class="kicker"><span>LEARNING WITH AI</span><span id="progressLabel">Q1 / 6</span></div>
+    <h1>学ぶ目的とAIの使い方</h1>
+    <p>確認クイズ — 全6問</p>
+  </div>
+
+  <div class="trail" id="trail"></div>
+
+  <div class="quiz-wrap" id="quizWrap">
+    <div class="card">
+      <div class="q-label" id="qLabel">設問 01</div>
+      <p class="q-scene" id="qScene"></p>
+      <p class="q-prompt" id="qPrompt"></p>
+      <div class="options" id="options"></div>
+      <div class="feedback" id="feedback">
+        <div class="verdict" id="verdict"></div>
+        <p id="explanation"></p>
+        <button class="next-btn" id="nextBtn">次の設問へ →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="result" id="result">
+    <div class="kicker" style="font-family:'Courier New',monospace;font-size:12px;color:var(--moss);letter-spacing:.06em;">RESULT</div>
+    <div class="score" id="scoreText">0<span>/6</span></div>
+    <div class="stamp" id="stamp">JUDGMENT</div>
+    <p class="msg" id="resultMsg"></p>
+    <div class="keypoint">
+      <div class="k-label">このクイズで伝えたいこと</div>
+      AIを使うかどうかより大事なのは、「自分で考える部分」をAIに渡してしまっていないかです。何のために学ぶのかに合わせて、AI・手書き・教科書・友だちなどの道具を選びましょう。
+    </div>
+    <div class="review" id="review"></div>
+    <div class="result-actions">
+      <button class="download-btn" id="downloadBtn">⬇ 結果をCSVでダウンロード</button>
+      <button class="retry-btn" id="copyBtn">結果をコピーする</button>
+      <button class="retry-btn" id="retryBtn">もう一度挑戦する</button>
+    </div>
+    <div class="copy-note" id="copyNote"></div>
+  </div>
+
+  <footer>AI活用学習教材 &middot; 学ぶ目的 / AIの使い方 / 自分で考えること</footer>
+</div>
+
+<script>
+const questions = [
+  {
+    "label": "設問 01",
+    "scene": "ひかるさんは「テストで良い点を取りたい」と思って勉強しています。明日は数学のテストです。",
+    "prompt": "ひかるさんにとって、いちばん良いAIの使い方はどれ？",
+    "options": [
+      "宿題の答えをAIに聞いて、ノートに写す",
+      "「この単元の練習問題を5問出して」と頼み、自分で解いてから答え合わせをする",
+      "テストに出そうな答えを予想してもらい、それだけを覚える",
+      "AIが作った解説を読んで、解けるつもりになって終わる"
+    ],
+    "correct": 1,
+    "explanation": "テスト本番ではAIを使えません。点を取るために必要なのは、自分で解ける力です。AIに練習問題を作ってもらい、自分で解いてから答え合わせをすれば、本番で使える力がつきます。",
+    "optionNotes": [
+      "答えを写すと宿題は終わりますが、解き方は身につきません。テスト本番で困るのは自分です。",
+      null,
+      "AIの予想は外れることがあります。それに、AIはまちがえることもあります。予想だけに頼るのは危険です。",
+      "解説を読むだけだと「わかったつもり」になりがちです。自分の手で解いてみて、はじめて力がつきます。"
+    ]
+  },
+  {
+    "label": "設問 02",
+    "scene": "あおいさんは「なぜそうなるのか、わかるようになりたい」と思って勉強しています。理科の問題が解けずに困っています。",
+    "prompt": "あおいさんにとって、いちばん良いAIの使い方はどれ？",
+    "options": [
+      "答えだけ教えてもらって、次の問題に進む",
+      "AIに問題を全部解いてもらい、解き方を覚える",
+      "「答えは言わないで、ヒントだけ出して」と頼み、自分で考える",
+      "考えるのはめんどうなので、AIに「かんたんにして」と頼んで問題を変えてもらう"
+    ],
+    "correct": 2,
+    "explanation": "「わかるようになりたい」なら、自分で考える時間がいちばん大切です。ヒントだけもらえば、考えるのは自分のままです。最後に「自分の説明が合っているか確かめて」と聞くのも良い使い方です。",
+    "optionNotes": [
+      "答えだけ知っても、「なぜそうなるのか」はわかりません。あおいさんの目的から遠ざかってしまいます。",
+      "全部解いてもらうと、考える部分をAIに渡してしまいます。覚えた解き方は、少し問題が変わると使えないことが多いです。",
+      null,
+      "問題をかんたんにすると、解けた気分にはなれますが、わかるようにはなりません。"
+    ]
+  },
+  {
+    "label": "設問 03",
+    "scene": "そらさんは「英語を話せるようになりたい」と思って勉強しています。",
+    "prompt": "そらさんにとって、いちばん良いAIの使い方はどれ？",
+    "options": [
+      "AIを相手に、英語で会話の練習をする",
+      "日本語で書いた作文を、丸ごと英語に翻訳してもらって提出する",
+      "英単語の意味は毎回AIに聞けばいいので、覚えない",
+      "英語の宿題を、全部AIにやってもらう"
+    ],
+    "correct": 0,
+    "explanation": "話せるようになるには、自分で英語を口に出す練習が必要です。AIは何度でも、いつでも会話の相手になってくれます。まちがえても気にせず練習できるのが良いところです。",
+    "optionNotes": [
+      null,
+      "翻訳すると提出はできますが、自分で英語を組み立てる力はつきません。話す力にもつながりません。",
+      "会話のたびにAIに聞いていたら、話すことはできません。単語は自分の頭に入っていてこそ使えます。",
+      "宿題は終わっても、英語の力は何も増えません。そらさんの目的とは反対の使い方です。"
+    ]
+  },
+  {
+    "label": "設問 04",
+    "scene": "ゆうきさんには「行きたい高校」があります。面接で志望理由を話す準備をしています。",
+    "prompt": "ゆうきさんにとって、いちばん良いAIの使い方はどれ？",
+    "options": [
+      "志望理由をAIに全部書いてもらい、それを暗記する",
+      "AIが書いた文のほうが上手なので、自分の考えは入れないようにする",
+      "自分の名前、学校名、住所をAIに入力して、くわしい志望理由を書いてもらう",
+      "志望理由を自分で書いてから「わかりにくい所はある？」と聞き、面接の練習相手にもなってもらう"
+    ],
+    "correct": 3,
+    "explanation": "面接では、自分の言葉で話すことが大切です。自分で考えて書いたものをAIに見てもらい、練習相手になってもらえば、自分の考えのまま、伝わりやすく直していけます。",
+    "optionNotes": [
+      "暗記した文は、質問を少し変えられると答えられなくなります。面接官は「あなたの考え」を聞きたいのです。",
+      "上手な文でも、自分の考えが入っていなければ、あなたの志望理由にはなりません。",
+      "名前や学校名、住所などの個人情報は、AIに入力してはいけません。入力したものは自分の手を離れてしまいます。",
+      null
+    ]
+  },
+  {
+    "label": "設問 05",
+    "scene": "みずきさんは「手書きでまとめると覚えやすい」と感じています。社会の単元のまとめをしています。",
+    "prompt": "みずきさんにとって、いちばん良い学び方はどれ？",
+    "options": [
+      "手書きは時間がかかるので、まとめは全部AIに作ってもらう",
+      "AIが作ったまとめを、そのままノートに書き写す",
+      "まず自分で手書きでまとめ、あとでAIに「抜けている大事なことはある？」と確かめてもらう",
+      "AIは使ってはいけないので、まとめが合っているかは確かめない"
+    ],
+    "correct": 2,
+    "explanation": "自分に合う学び方（手書き）を大切にしながら、AIを確認役として使う方法です。AIを使わない選択も立派な選択ですが、組み合わせることで、手書きの良さを残したまま学びを深められます。",
+    "optionNotes": [
+      "みずきさんは手書きで覚えやすいと感じています。全部AIに任せると、自分に合う学び方を手放すことになります。",
+      "書き写すだけでは、何が大事かを自分で考える部分がなくなってしまいます。",
+      null,
+      "AIを使わないのは一つの選択です。でも、確かめないままだと、まちがいに気づけません。教科書などで確かめましょう。"
+    ]
+  },
+  {
+    "label": "設問 06",
+    "scene": "ここまでの5人は、学ぶ目的がそれぞれちがいました。",
+    "prompt": "どの目的の人にも共通して、AIを使うときにいちばん大事なことはどれ？",
+    "options": [
+      "できるだけたくさんAIを使うこと",
+      "「自分で考える部分」をAIに渡してしまっていないか考えること",
+      "AIの答えはいつも正しいので、そのまま信じること",
+      "AIは危ないので、どんなときも絶対に使わないこと"
+    ],
+    "correct": 1,
+    "explanation": "良い使い方は目的によって変わりますが、共通するのは「考えるのは自分」ということです。AIはヒントをくれたり、練習相手や確認役になったりする道具です。何のために学ぶのかに合わせて、上手に選びましょう。",
+    "optionNotes": [
+      "たくさん使えば良いわけではありません。使い方しだいで、学びを助けることも、うばうこともあります。",
+      null,
+      "AIはもっともらしいまちがいを言うことがあります。教科書などで確かめる習慣が大切です。",
+      "使わないのも一つの選択ですが、「絶対に使わない」と決めつける必要はありません。目的に合わせて選ぶことが大切です。"
+    ]
+  }
+];
+
+let current = 0;
+let score = 0;
+let answered = false;
+const trailResults = new Array(questions.length).fill(null);
+const userAnswers = new Array(questions.length).fill(null);
+
+const trailEl = document.getElementById('trail');
+const qLabel = document.getElementById('qLabel');
+const qScene = document.getElementById('qScene');
+const qPrompt = document.getElementById('qPrompt');
+const optionsEl = document.getElementById('options');
+const feedbackEl = document.getElementById('feedback');
+const verdictEl = document.getElementById('verdict');
+const explanationEl = document.getElementById('explanation');
+const nextBtn = document.getElementById('nextBtn');
+const progressLabel = document.getElementById('progressLabel');
+const quizWrap = document.getElementById('quizWrap');
+const resultEl = document.getElementById('result');
+const scoreText = document.getElementById('scoreText');
+const resultMsg = document.getElementById('resultMsg');
+const stampEl = document.getElementById('stamp');
+const retryBtn = document.getElementById('retryBtn');
+const copyBtn = document.getElementById('copyBtn');
+const copyNote = document.getElementById('copyNote');
+
+const letters = ['A','B','C','D'];
+
+function buildTrail(){
+  trailEl.innerHTML = '';
+  questions.forEach((_, i) => {
+    const seg = document.createElement('div');
+    seg.className = 'trail-seg';
+    seg.id = 'seg-' + i;
+    trailEl.appendChild(seg);
+  });
+}
+
+function renderQuestion(){
+  answered = false;
+  const q = questions[current];
+  qLabel.textContent = q.label;
+  qScene.textContent = q.scene;
+  qPrompt.textContent = q.prompt;
+  progressLabel.textContent = `Q${current+1} / ${questions.length}`;
+  optionsEl.innerHTML = '';
+  feedbackEl.classList.remove('show');
+
+  q.options.forEach((optText, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt';
+    const l = document.createElement('span');
+    l.className = 'letter';
+    l.textContent = letters[i];
+    const t = document.createElement('span');
+    t.textContent = optText;
+    btn.appendChild(l);
+    btn.appendChild(t);
+    btn.addEventListener('click', () => selectAnswer(i));
+    optionsEl.appendChild(btn);
+  });
+}
+
+function selectAnswer(i){
+  if(answered) return;
+  answered = true;
+  const q = questions[current];
+  const isCorrect = i === q.correct;
+  if(isCorrect) score++;
+  trailResults[current] = isCorrect;
+  userAnswers[current] = i;
+  document.getElementById('seg-' + current).classList.add(isCorrect ? 'done' : 'wrong');
+
+  const btns = optionsEl.querySelectorAll('.opt');
+  btns.forEach((btn, idx) => {
+    btn.disabled = true;
+    if(idx === q.correct){
+      btn.classList.add('correct');
+    } else if(idx === i){
+      btn.classList.add('incorrect');
+    } else {
+      btn.classList.add('dim');
+    }
+  });
+
+  verdictEl.textContent = isCorrect ? '正解' : '不正解';
+  verdictEl.className = 'verdict ' + (isCorrect ? 'ok' : 'ng');
+
+  let text = q.explanation;
+  if(!isCorrect && q.optionNotes && q.optionNotes[i]){
+    text += '\n\n' + q.optionNotes[i];
+  }
+  explanationEl.textContent = text;
+  feedbackEl.classList.add('show');
+  nextBtn.textContent = current === questions.length - 1 ? '結果を見る →' : '次の設問へ →';
+}
+
+nextBtn.addEventListener('click', () => {
+  if(current < questions.length - 1){
+    current++;
+    renderQuestion();
+  } else {
+    showResult();
+  }
+});
+
+function showResult(){
+  quizWrap.classList.add('hidden');
+  resultEl.classList.add('show');
+  scoreText.innerHTML = `${score}<span>/${questions.length}</span>`;
+  copyNote.textContent = '';
+
+  let msg, stamp;
+  if(score === questions.length){
+    stamp = 'PASSED — 満点';
+    msg = '学ぶ目的に合ったAIの使い方を、しっかり考えられています。自分がAIを使うときも、この考え方を忘れずにいきましょう。';
+  } else if(score >= questions.length - 1){
+    stamp = 'PASSED';
+    msg = 'よく理解できています。まちがえた設問の解説をもう一度読んで、考え方を確かなものにしましょう。';
+  } else if(score >= questions.length / 2){
+    stamp = '要復習';
+    msg = '基本は押さえられています。「その人は何のために学んでいるのか」をもう一度考えながら、解説を読み直してみましょう。';
+  } else {
+    stamp = '要復習';
+    msg = '大丈夫、ここから考えていけば十分です。それぞれの人の「学ぶ目的」に注目して、解説を読んでからもう一度挑戦してみましょう。';
+  }
+  stampEl.textContent = stamp;
+  resultMsg.textContent = msg;
+
+  const reviewEl = document.getElementById('review');
+  reviewEl.innerHTML = '';
+  const wrongIndexes = trailResults
+    .map((r, idx) => ({ r, idx }))
+    .filter(item => item.r === false)
+    .map(item => item.idx);
+
+  if(wrongIndexes.length > 0){
+    const heading = document.createElement('div');
+    heading.className = 'review-heading';
+    heading.textContent = 'まちがえた設問の解説';
+    reviewEl.appendChild(heading);
+
+    wrongIndexes.forEach(idx => {
+      const q = questions[idx];
+      const yourIdx = userAnswers[idx];
+      let text = q.explanation;
+      if(q.optionNotes && q.optionNotes[yourIdx]){
+        text += '\n\n' + q.optionNotes[yourIdx];
+      }
+      const item = document.createElement('div');
+      item.className = 'review-item';
+
+      const lab = document.createElement('div');
+      lab.className = 'r-label';
+      lab.textContent = q.label;
+
+      const pr = document.createElement('p');
+      pr.className = 'r-prompt';
+      pr.textContent = q.scene + '　' + q.prompt;
+
+      const ans = document.createElement('p');
+      ans.className = 'r-answer';
+      const t1 = document.createElement('span'); t1.className = 'tag your'; t1.textContent = 'あなたの回答';
+      const t2 = document.createElement('span'); t2.className = 'tag correct'; t2.textContent = '正解';
+      ans.appendChild(t1);
+      ans.appendChild(document.createTextNode(`${letters[yourIdx]}. ${q.options[yourIdx]}`));
+      ans.appendChild(document.createElement('br'));
+      ans.appendChild(t2);
+      ans.appendChild(document.createTextNode(`${letters[q.correct]}. ${q.options[q.correct]}`));
+
+      const ex = document.createElement('p');
+      ex.className = 'r-explain';
+      ex.textContent = text;
+
+      item.appendChild(lab); item.appendChild(pr); item.appendChild(ans); item.appendChild(ex);
+      reviewEl.appendChild(item);
+    });
+  }
+}
+
+function resultText(){
+  const lines = [`学ぶ目的とAIの使い方 確認クイズ　結果：${score} / ${questions.length}`];
+  questions.forEach((q, idx) => {
+    const yourIdx = userAnswers[idx];
+    const mark = trailResults[idx] ? '○' : '×';
+    const yours = yourIdx === null ? '(未回答)' : `${letters[yourIdx]}. ${q.options[yourIdx]}`;
+    lines.push(`Q${idx + 1} ${mark}　あなたの回答：${yours}`);
+  });
+  return lines.join('\n');
+}
+
+copyBtn.addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(resultText());
+    copyNote.textContent = 'コピーしました。Padletなどに貼り付けられます。';
+  } catch (e) {
+    copyNote.textContent = 'コピーできませんでした。画面の結果を見て書き写してください。';
+  }
+});
+
+function csvEscape(text){
+  return `"${String(text).replace(/"/g, '""')}"`;
+}
+
+function downloadResultsCSV(){
+  const rows = [['設問番号', '場面', '問題文', 'あなたの回答', '正解', '正誤', '得点']];
+  questions.forEach((q, idx) => {
+    const yourIdx = userAnswers[idx];
+    rows.push([
+      `Q${idx + 1}`,
+      q.scene,
+      q.prompt,
+      yourIdx === null ? '(未回答)' : `${letters[yourIdx]}. ${q.options[yourIdx]}`,
+      `${letters[q.correct]}. ${q.options[q.correct]}`,
+      trailResults[idx] ? '正解' : '不正解',
+      idx === 0 ? `${score} / ${questions.length}` : ''
+    ]);
+  });
+  const csvBody = rows.map(row => row.map(csvEscape).join(',')).join('\r\n');
+  const blob = new Blob(['\uFEFF' + csvBody], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const stamp = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `学ぶ目的とAIクイズ結果_${stamp}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('downloadBtn').addEventListener('click', downloadResultsCSV);
+
+retryBtn.addEventListener('click', () => {
+  current = 0;
+  score = 0;
+  trailResults.fill(null);
+  userAnswers.fill(null);
+  buildTrail();
+  resultEl.classList.remove('show');
+  quizWrap.classList.remove('hidden');
+  renderQuestion();
+});
+
+buildTrail();
+renderQuestion();
+</script>
+</body>
+</html>
